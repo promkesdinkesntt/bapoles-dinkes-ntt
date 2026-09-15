@@ -1,0 +1,6 @@
+{
+  "name": "BAPOLES Dinkes NTT - Podcast Pola Hidup Sehat",
+  "description": "Website Resmi Podcast BAPOLES (Ba' Omong Pola Hidup Sehat) Dinas Kesehatan Provinsi Nusa Tenggara Timur dengan sentuhan Tenun Ikat NTT, jadwal siaran, dan edukasi kesehatan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
