@@ -24,8 +24,14 @@ import { TeamSection } from './components/TeamSection';
 import { ContactSection } from './components/ContactSection';
 import { PodcastPlayer } from './components/PodcastPlayer';
 import { LiveEditorModal } from './components/LiveEditorModal';
+import { AdminLoginModal } from './components/AdminLoginModal';
 import { Edit3, MessageCircle, ArrowUp } from 'lucide-react';
 import { normalizeCategory, syncEpisodesWithGallery } from './utils/categoryUtils';
+import { 
+  getAdminSession, 
+  clearAdminSession, 
+  AdminSession 
+} from './utils/authStorage';
 import { 
   saveGalleryToIndexedDB, 
   loadGalleryFromIndexedDB,
@@ -185,7 +191,33 @@ export default function App() {
   const [editModalTab, setEditModalTab] = useState('beranda');
   const [showBackToTop, setShowBackToTop] = useState(false);
 
+  // Admin Authentication State
+  const [adminSession, setAdminSession] = useState<AdminSession | null>(() => getAdminSession());
+  const [isAdminLoginModalOpen, setIsAdminLoginModalOpen] = useState(false);
+  const isAdmin = Boolean(adminSession && adminSession.isLoggedIn);
+
+  const handleOpenAdminLogin = () => {
+    setIsAdminLoginModalOpen(true);
+  };
+
+  const handleLoginSuccess = (session: AdminSession) => {
+    setAdminSession(session);
+    setIsAdminLoginModalOpen(false);
+  };
+
+  const handleLogout = () => {
+    if (confirm('Apakah Anda yakin ingin keluar dari sesi Admin?')) {
+      clearAdminSession();
+      setAdminSession(null);
+      setIsEditModalOpen(false);
+    }
+  };
+
   const handleOpenEditModal = (tab: string = 'beranda') => {
+    if (!isAdmin) {
+      setIsAdminLoginModalOpen(true);
+      return;
+    }
     setEditModalTab(tab);
     setIsEditModalOpen(true);
   };
@@ -381,6 +413,38 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#eaf6f0] via-[#f3faf6] to-[#e6f5ec] text-slate-800 selection:bg-emerald-600 selection:text-white relative">
       
+      {/* Admin Top Notification Bar (Hanya Muncul Saat Admin Login) */}
+      {isAdmin && (
+        <div className="bg-gradient-to-r from-[#0c3832] via-[#0f2b48] to-[#0c3832] text-white text-xs px-4 py-2 flex flex-wrap items-center justify-between gap-2 shadow-md relative z-40 border-b border-emerald-500/30">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span className="font-bold">Mode Pengelola / Admin Aktif:</span>
+            <span className="font-mono text-emerald-300 font-semibold">{adminSession?.userEmail}</span>
+            <span className="hidden sm:inline text-slate-400 text-[11px]">(Tombol edit telah disembunyikan untuk pengunjung umum)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleOpenEditModal('beranda')}
+              className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition-colors cursor-pointer"
+            >
+              Buka Panel Editor
+            </button>
+            <button
+              onClick={() => handleOpenEditModal('security')}
+              className="px-2.5 py-1 rounded-lg bg-teal-800 hover:bg-teal-700 text-white font-bold text-[11px] transition-colors cursor-pointer"
+            >
+              🛡️ Keamanan Akun
+            </button>
+            <button
+              onClick={handleLogout}
+              className="text-red-300 hover:text-red-100 font-bold text-[11px] underline cursor-pointer ml-1"
+            >
+              Keluar
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 1. Header & Navigation (Pojok Kanan Atas) */}
       <Navbar
         activeSection={activeSection}
@@ -389,6 +453,9 @@ export default function App() {
         setSearchQuery={setSearchQuery}
         onOpenEditModal={(tab) => handleOpenEditModal(tab || 'beranda')}
         siteConfig={siteConfig}
+        isAdmin={isAdmin}
+        adminUserEmail={adminSession?.userEmail}
+        onLogout={handleLogout}
       />
 
       {/* 2. Hero Section (Latar Belakang Tenun NTT + Logo BAPOLES Asli Tanpa Editan) */}
@@ -398,17 +465,17 @@ export default function App() {
           latestEpisode={episodes[0]}
           onPlayEpisode={(ep) => setCurrentEpisode(ep)}
           onNavigate={handleNavigate}
-          onOpenEditModal={(tab) => handleOpenEditModal(tab || 'beranda')}
-          onUpdateBanner={(newUrl) => {
+          onOpenEditModal={isAdmin ? (tab) => handleOpenEditModal(tab || 'beranda') : undefined}
+          onUpdateBanner={isAdmin ? (newUrl) => {
             const updated = { ...siteConfig, bannerImageUrl: newUrl };
             setSiteConfig(updated);
             safeSetLocalStorage(STORAGE_KEY_CONFIG, updated);
-          }}
-          onUpdateOverlayOpacity={(opacity) => {
+          } : undefined}
+          onUpdateOverlayOpacity={isAdmin ? (opacity) => {
             const updated = { ...siteConfig, bannerOverlayOpacity: opacity };
             setSiteConfig(updated);
             safeSetLocalStorage(STORAGE_KEY_CONFIG, updated);
-          }}
+          } : undefined}
         />
 
         {/* 3. Katalog Episode Podcast */}
@@ -422,34 +489,39 @@ export default function App() {
         {/* 4. Jadwal Podcast Live */}
         <ScheduleSection 
           schedules={schedules} 
-          onOpenEditModal={(tab) => handleOpenEditModal(tab || 'schedules')} 
+          onOpenEditModal={isAdmin ? (tab) => handleOpenEditModal(tab || 'schedules') : undefined} 
         />
 
         {/* 5. Galeri Dokumentasi */}
         <GallerySection 
           gallery={gallery} 
-          onOpenEditModal={(tab) => handleOpenEditModal(tab || 'gallery')} 
-          onDeleteGallery={handleDeleteGallery}
-          onBatchAddGallery={handleBatchAddGallery}
+          isAdmin={isAdmin}
+          onOpenEditModal={isAdmin ? (tab) => handleOpenEditModal(tab || 'gallery') : undefined} 
+          onDeleteGallery={isAdmin ? handleDeleteGallery : undefined}
+          onBatchAddGallery={isAdmin ? handleBatchAddGallery : undefined}
         />
 
         {/* 6. Tentang BAPOLES & Makna Logo */}
         <AboutSection 
           siteConfig={siteConfig} 
-          onOpenEditModal={(tab) => handleOpenEditModal(tab || 'about')} 
+          onOpenEditModal={isAdmin ? (tab) => handleOpenEditModal(tab || 'about') : undefined} 
         />
 
         {/* 7. Tim Kami */}
         <TeamSection 
           team={team} 
-          onOpenEditModal={(tab) => handleOpenEditModal(tab || 'team')} 
+          onOpenEditModal={isAdmin ? (tab) => handleOpenEditModal(tab || 'team') : undefined} 
         />
 
         {/* 8. Footer & Kontak WhatsApp + Medsos (@dinkesntt) */}
         <ContactSection
           siteConfig={siteConfig}
           onSubmitQuestion={handleSubmitQuestion}
-          onOpenEditModal={(tab) => handleOpenEditModal(tab || 'contact')}
+          onOpenEditModal={isAdmin ? (tab) => handleOpenEditModal(tab || 'contact') : undefined}
+          onOpenAdminLogin={handleOpenAdminLogin}
+          isAdmin={isAdmin}
+          onLogout={handleLogout}
+          adminUserEmail={adminSession?.userEmail}
         />
       </main>
 
@@ -476,6 +548,15 @@ export default function App() {
         onSaveToLocalStorage={handleSaveToLocalStorage}
         onResetToDefault={handleResetToDefault}
         initialTab={editModalTab}
+        currentSession={adminSession}
+        onLogout={handleLogout}
+      />
+
+      {/* Admin Login Modal (Khusus Admin Dinkes NTT) */}
+      <AdminLoginModal
+        isOpen={isAdminLoginModalOpen}
+        onClose={() => setIsAdminLoginModalOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
       />
 
       {/* Floating Action Buttons (Right-Bottom Corner) */}
@@ -493,15 +574,17 @@ export default function App() {
           </svg>
         </a>
 
-        {/* Quick Edit Website Floating Pill */}
-        <button
-          onClick={() => handleOpenEditModal('beranda')}
-          className="px-3.5 py-2 rounded-full bg-[#0f2b48] hover:bg-teal-700 text-teal-300 hover:text-white border border-teal-400/40 text-xs font-bold flex items-center gap-1.5 shadow-xl transition-all cursor-pointer"
-          title="Buka Mode Edit Konten"
-        >
-          <Edit3 className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Edit Website</span>
-        </button>
+        {/* Quick Edit Website Floating Pill (Hanya Jika Admin Login) */}
+        {isAdmin && (
+          <button
+            onClick={() => handleOpenEditModal('beranda')}
+            className="px-3.5 py-2 rounded-full bg-[#0f2b48] hover:bg-teal-700 text-teal-300 hover:text-white border border-teal-400/40 text-xs font-bold flex items-center gap-1.5 shadow-xl transition-all cursor-pointer"
+            title="Buka Mode Edit Konten"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Edit Website</span>
+          </button>
+        )}
 
         {/* Back to top */}
         {showBackToTop && (

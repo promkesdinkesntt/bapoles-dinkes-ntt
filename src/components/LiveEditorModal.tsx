@@ -24,7 +24,8 @@ import {
   Youtube,
   ExternalLink,
   AlertCircle,
-  Loader2
+  Loader2,
+  ShieldCheck
 } from 'lucide-react';
 import { compressAndProcessImage } from '../utils/imageUpload';
 import { 
@@ -32,6 +33,7 @@ import {
   saveEpisodesToIndexedDB, 
   saveGalleryToIndexedDB 
 } from '../utils/galleryStorage';
+import { AdminSession } from '../utils/authStorage';
 import { 
   SiteConfig, 
   PodcastEpisode, 
@@ -47,6 +49,7 @@ import { NavMenuManager } from './editor/NavMenuManager';
 import { HomePillarsEditor } from './editor/HomePillarsEditor';
 import { AboutSymbolsAndPillarsEditor } from './editor/AboutSymbolsAndPillarsEditor';
 import { ContactChannelsEditor } from './editor/ContactChannelsEditor';
+import { AdminSecurityTab } from './editor/AdminSecurityTab';
 
 interface LiveEditorModalProps {
   isOpen: boolean;
@@ -64,6 +67,8 @@ interface LiveEditorModalProps {
   onSaveToLocalStorage: () => void;
   onResetToDefault: () => void;
   initialTab?: string;
+  currentSession?: AdminSession | null;
+  onLogout?: () => void;
 }
 
 export const LiveEditorModal: React.FC<LiveEditorModalProps> = ({
@@ -82,6 +87,8 @@ export const LiveEditorModal: React.FC<LiveEditorModalProps> = ({
   onSaveToLocalStorage,
   onResetToDefault,
   initialTab = 'beranda',
+  currentSession,
+  onLogout,
 }) => {
   const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [savedAlert, setSavedAlert] = useState(false);
@@ -538,6 +545,7 @@ export const LiveEditorModal: React.FC<LiveEditorModalProps> = ({
     { id: 'contact', label: '6. Kontak & Layanan', icon: Phone },
     { id: 'nav', label: '⚙️ Kelola Semua Menu (Tambah/Edit/Hapus)', icon: Settings },
     { id: 'episodes', label: '🎙️ Episode Podcast', icon: Headphones },
+    { id: 'security', label: '🛡️ Keamanan & Akun Admin', icon: ShieldCheck },
   ];
 
   return (
@@ -2038,6 +2046,20 @@ export const LiveEditorModal: React.FC<LiveEditorModalProps> = ({
                 ))}
               </div>
             </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* TAB: KEAMANAN & AKUN ADMIN */}
+          {/* ======================================================== */}
+          {activeTab === 'security' && (
+            <AdminSecurityTab
+              currentSession={currentSession || null}
+              onLogout={() => {
+                if (onLogout) onLogout();
+                onClose();
+              }}
+              showToast={showToast}
+            />
           )}
 
         </div>

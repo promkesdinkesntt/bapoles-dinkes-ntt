@@ -10,7 +10,8 @@ import {
   Radio,
   Clock,
   Sparkles,
-  Edit3
+  Edit3,
+  Lock
 } from 'lucide-react';
 import { BapolesLogo } from './BapolesLogo';
 import { SiteConfig, UserQuestionSubmission } from '../types';
@@ -19,12 +20,20 @@ interface ContactSectionProps {
   siteConfig: SiteConfig;
   onSubmitQuestion: (data: Omit<UserQuestionSubmission, 'id' | 'submittedAt'>) => void;
   onOpenEditModal?: (tab: string) => void;
+  onOpenAdminLogin?: () => void;
+  isAdmin?: boolean;
+  onLogout?: () => void;
+  adminUserEmail?: string;
 }
 
 export const ContactSection: React.FC<ContactSectionProps> = ({
   siteConfig,
   onSubmitQuestion,
   onOpenEditModal,
+  onOpenAdminLogin,
+  isAdmin = false,
+  onLogout,
+  adminUserEmail,
 }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -341,6 +350,32 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
           <div className="text-center md:text-right text-[11px] text-slate-600">
             <p>© 2026 Dinas Kesehatan Provinsi NTT. Hak Cipta Dilindungi.</p>
             <p className="text-emerald-800 font-semibold mt-0.5">Mewujudkan Masyarakat Nusa Tenggara Timur yang Sehat & Tangguh.</p>
+
+            <div className="flex items-center gap-2 mt-2 justify-center md:justify-end">
+              {isAdmin ? (
+                <div className="inline-flex items-center gap-2 bg-emerald-100/90 text-emerald-900 px-2.5 py-1 rounded-full text-[10px] font-bold border border-emerald-300">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>Sesi Admin: {adminUserEmail || 'Aktif'}</span>
+                  {onLogout && (
+                    <button
+                      onClick={onLogout}
+                      className="text-red-600 hover:text-red-700 underline font-semibold cursor-pointer ml-1"
+                    >
+                      Keluar
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={onOpenAdminLogin}
+                  className="inline-flex items-center gap-1.5 text-[11px] text-slate-400 hover:text-teal-700 font-medium hover:underline transition-colors cursor-pointer"
+                  title="Khusus Pengelola BAPOLES Dinas Kesehatan Prov. NTT"
+                >
+                  <Lock className="w-3 h-3" />
+                  <span>Akses Admin Dinkes NTT</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 

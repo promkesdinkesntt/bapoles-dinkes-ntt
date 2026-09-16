@@ -31,6 +31,7 @@ interface GallerySectionProps {
   onOpenEditModal?: (tab: string) => void;
   onDeleteGallery?: (id: string) => void;
   onBatchAddGallery?: (items: GalleryItem[]) => void;
+  isAdmin?: boolean;
 }
 
 function getYouTubeEmbedUrl(url?: string): string | null {
@@ -47,7 +48,8 @@ export const GallerySection: React.FC<GallerySectionProps> = ({
   gallery, 
   onOpenEditModal,
   onDeleteGallery,
-  onBatchAddGallery
+  onBatchAddGallery,
+  isAdmin = false,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -284,15 +286,17 @@ export const GallerySection: React.FC<GallerySectionProps> = ({
           </div>
 
           <div className="flex items-center gap-2.5 justify-center flex-wrap mt-2 mb-3">
-            {/* Quick Upload Button directly in Gallery Section */}
-            <button
-              onClick={() => setShowQuickUploadModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md hover:scale-105 transition-all cursor-pointer"
-              title="Unggah Foto atau Tautan Banyak Sekaligus Tanpa Batas"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Unggah Foto & Tautan (Tanpa Batas)</span>
-            </button>
+            {/* Quick Upload Button directly in Gallery Section (Khusus Admin) */}
+            {isAdmin && (
+              <button
+                onClick={() => setShowQuickUploadModal(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md hover:scale-105 transition-all cursor-pointer"
+                title="Unggah Foto atau Tautan Banyak Sekaligus Tanpa Batas"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Unggah Foto & Tautan (Tanpa Batas)</span>
+              </button>
+            )}
 
             {onOpenEditModal && (
               <button

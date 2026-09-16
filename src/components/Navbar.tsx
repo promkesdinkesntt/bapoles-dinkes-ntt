@@ -19,7 +19,8 @@ import {
   Award,
   HelpCircle,
   Folder,
-  Plus
+  Plus,
+  LogOut
 } from 'lucide-react';
 import { BapolesLogo } from './BapolesLogo';
 import { SiteConfig, NavMenuItem } from '../types';
@@ -32,6 +33,9 @@ interface NavbarProps {
   onOpenEditModal: (tab?: string) => void;
   siteConfig: SiteConfig;
   onCustomMenuClick?: (menu: NavMenuItem) => void;
+  isAdmin?: boolean;
+  adminUserEmail?: string;
+  onLogout?: () => void;
 }
 
 const getMenuIcon = (iconName?: string) => {
@@ -62,6 +66,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenEditModal,
   siteConfig,
   onCustomMenuClick,
+  isAdmin = false,
+  adminUserEmail,
+  onLogout,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -168,14 +175,16 @@ export const Navbar: React.FC<NavbarProps> = ({
               );
             })}
 
-            {/* Quick Button to edit menu titles */}
-            <button
-              onClick={() => onOpenEditModal('nav')}
-              className="p-1.5 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
-              title="Kelola & Tambah Menu Navigasi"
-            >
-              <Edit3 className="w-3.5 h-3.5" />
-            </button>
+            {/* Quick Button to edit menu titles (Hanya jika admin login) */}
+            {isAdmin && (
+              <button
+                onClick={() => onOpenEditModal('nav')}
+                className="p-1.5 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                title="Kelola & Tambah Menu Navigasi"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+              </button>
+            )}
           </nav>
 
           {/* Kolom Pencarian (Search Bar) */}
@@ -201,16 +210,30 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* Tombol Mode Edit (Mudah Di-Edit & Gratis) */}
-          <button
-            id="btn-open-edit-mode"
-            onClick={() => onOpenEditModal('beranda')}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-md transition-all cursor-pointer"
-            title="Edit konten website podcast dengan mudah dan gratis"
-          >
-            <Edit3 className="w-3.5 h-3.5" />
-            <span>Mode Edit</span>
-          </button>
+          {/* Tombol Mode Edit & Logout (Hanya Tampil untuk Admin yang Telah Login) */}
+          {isAdmin && (
+            <div className="flex items-center gap-2">
+              <button
+                id="btn-open-edit-mode"
+                onClick={() => onOpenEditModal('beranda')}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-md transition-all cursor-pointer"
+                title="Edit konten website podcast"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>Mode Edit</span>
+              </button>
+
+              {onLogout && (
+                <button
+                  onClick={onLogout}
+                  className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                  title={`Keluar dari Sesi Admin (${adminUserEmail || ''})`}
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Mobile controls */}
@@ -224,14 +247,16 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Search className="w-5 h-5 text-teal-700" />
           </button>
 
-          {/* Quick Edit Button Mobile */}
-          <button
-            onClick={() => onOpenEditModal('beranda')}
-            className="p-2 rounded-lg bg-teal-600 text-white font-bold hover:bg-teal-700"
-            title="Mode Edit"
-          >
-            <Edit3 className="w-5 h-5" />
-          </button>
+          {/* Quick Edit Button Mobile (Hanya Admin) */}
+          {isAdmin && (
+            <button
+              onClick={() => onOpenEditModal('beranda')}
+              className="p-2 rounded-lg bg-teal-600 text-white font-bold hover:bg-teal-700"
+              title="Mode Edit"
+            >
+              <Edit3 className="w-5 h-5" />
+            </button>
+          )}
 
           {/* Hamburger Menu Toggle */}
           <button
@@ -290,16 +315,33 @@ export const Navbar: React.FC<NavbarProps> = ({
           })}
 
           <div className="pt-3 border-t border-slate-200 flex flex-col gap-2">
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onOpenEditModal('nav');
-              }}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 text-white font-bold text-sm"
-            >
-              <Edit3 className="w-4 h-4" />
-              <span>Buka Mode Edit & Ganti Label Menu</span>
-            </button>
+            {isAdmin && (
+              <>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onOpenEditModal('nav');
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 text-white font-bold text-sm"
+                >
+                  <Edit3 className="w-4 h-4" />
+                  <span>Buka Mode Edit & Ganti Label Menu</span>
+                </button>
+
+                {onLogout && (
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onLogout();
+                    }}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-50 text-red-700 hover:bg-red-100 font-bold text-xs"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Keluar Sesi Admin ({adminUserEmail || ''})</span>
+                  </button>
+                )}
+              </>
+            )}
 
             <a
               href={`https://wa.me/62${siteConfig.whatsappNumber.replace(/^0/, '')}?text=${encodeURIComponent(siteConfig.whatsappMessage)}`}
